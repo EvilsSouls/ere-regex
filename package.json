@@ -1,0 +1,19 @@
+{
+  "name": "posix_regexp_engine",
+  "version": "0.1.0",
+  "description": "A custom POSIX-flavored RegExp Engine.",
+  "main": "index.ts",
+  "scripts": {
+    "test": "tsc && vite serve"
+  },
+  "keywords": [
+    "RegExp",
+    "POSIX",
+    "RegExp Engine"
+  ],
+  "author": "EvilsSouls",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.2.11"
+  }
+}
