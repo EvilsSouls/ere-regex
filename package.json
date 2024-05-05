@@ -4,7 +4,7 @@
   "description": "A custom POSIX-flavored RegExp Engine.",
   "main": "index.ts",
   "scripts": {
-    "test": "tsc && vite serve"
+    "test": "tsc && vite serve ./src"
   },
   "keywords": [
     "RegExp",
