@@ -1,14 +1,17 @@
 {
-  "name": "posix_regexp_engine",
+  "name": "ere_regex_engine",
   "version": "0.1.0",
-  "description": "A custom POSIX-flavored RegExp Engine.",
+  "description": "A custom ERE-flavored RegEx Engine.",
   "main": "index.ts",
   "scripts": {
     "test": "tsc && vite serve ./src"
   },
   "keywords": [
+    "RegEx",
     "RegExp",
-    "POSIX",
+    "ERE RegEx",
+    "ERE RegExp",
+    "RegEx Engine",
     "RegExp Engine"
   ],
   "author": "EvilsSouls",

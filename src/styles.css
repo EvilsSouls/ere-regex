@@ -21,7 +21,7 @@ html {
     line-height: 2;
 }
 
-#regexp-input-container {
+#regex-input-container {
     grid-column: 1;
     grid-row: 2;
 }

@@ -1,8 +1,8 @@
-export default class POSIXRegex {
+export default class ERERegex {
     readonly acceptedChars: Map<string, string>;
-    readonly regexp: string;
+    readonly regex: string;
     
-    constructor(regexp: string) {
+    constructor(regex: string) {
         this.acceptedChars = new Map([
             [" ", "0"],
             ["!", "0"],
@@ -102,7 +102,7 @@ export default class POSIXRegex {
             ["°", "21"],
         ]);
 
-        this.regexp = regexp;
+        this.regex = regex;
     }
 
     convertToPostfix() {
