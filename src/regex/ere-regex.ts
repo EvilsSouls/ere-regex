@@ -14,18 +14,16 @@ export default class ERERegex {
         this.regex = regex;
     }
 
-    addFinalConcatOperators(i: number): void {
-
-    }
-
     convertToPostfix(): string[] {
         let regex = this.regex;
         const tokens: string[] = []; // Character Classes and Interval Expressions (Curly Braces) will take up one Element. Everything else should be just one character.
 
-        const operatorStack: OperatorStackElement[] = [];
+        let operatorStack: OperatorStackElement[] = [];
         const operatorPriorities: Map<Operators,number> = new Map([["|", 0], ["°", 1], ["*", 2], ["+", 2], ["?", 2]]);
 
         const atomAmountsStack: number[] = [];
+        const previousOperatorStacks: OperatorStackElement[][] = []
+        
         let nAtom = 0;
         let nInsideBrackets = 0;
         for(let i = 0; i < regex.length; i++) {
@@ -53,16 +51,25 @@ export default class ERERegex {
                     break;
                 case "(":
                     nInsideBrackets++;
+
                     atomAmountsStack.push(nAtom);
                     nAtom = 0;
+
+                    previousOperatorStacks.push(operatorStack);
+                    operatorStack = [];
                     break;
                 case ")":
                     nInsideBrackets--;
                     const newNAtom = atomAmountsStack.pop();
+                    const newOperatorStack = previousOperatorStacks.pop();
+                    
+                    if(!newNAtom || !newOperatorStack) {throw new Error("Unexpected closing Bracket. Did you forget to escape it?");}
 
-                    if(!newNAtom) {throw new Error("Unexpected closing Bracket. Did you forget to escape it?")}
-
-                    nAtom = newNAtom;
+                    operatorStack.reverse().forEach((currentOperator) => {tokens.push(currentOperator.char);});
+                    
+                    nAtom = newNAtom + 1;
+                    operatorStack = newOperatorStack;
+                    break;
                 default:
                     tokens.push(currentChar);
                     nAtom++;
@@ -72,11 +79,10 @@ export default class ERERegex {
                         nAtom--;
                     }
             }
-            
         }
 
-        if(nInsideBrackets !== 0) {throw new Error(`Incorrect amount of opening and/or closing brackets. nInsideBrackets = ${nInsideBrackets}`)}
-        
+        if(nInsideBrackets !== 0) {throw new Error(`Incorrect amount of opening and/or closing brackets. nInsideBrackets = ${nInsideBrackets}`);}
+
         operatorStack.reverse().forEach((currentOperator) => {tokens.push(currentOperator.char);});
         return(tokens);
     }
