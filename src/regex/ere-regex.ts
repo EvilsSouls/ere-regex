@@ -1,10 +1,15 @@
 import {insertString} from "../generic_functions.js"
 
-type Operators = "|" | "°" | "*" | "+" | "?";
+const operators = ["|", "°", "*", "+", "?"] as const;
+type Operator = (typeof operators)[number];
 
 interface OperatorStackElement {
-    char: Operators;
+    char: Operator;
     priority: number;
+}
+
+interface State {
+    
 }
 
 export default class ERERegex {
@@ -14,15 +19,82 @@ export default class ERERegex {
         this.regex = regex;
     }
 
+    isOperator(string: string): string is Operator {
+        return operators.includes(string as Operator);
+    }
+
+    tokenize(): string[] {
+        // VERY IMPORTANT REMINDER: Think about whether or not "atomAmountsStack" and "previousOperatorStacks" is needed in this function. And just generally
+        // think about if this actually works, because I'm not sure. Also just finish it in general (with support for normal braces)
+        
+        const tokens: string[] = [];
+        let currentTempToken = "";
+        let currentMode = "default";
+        // Reminder to set this to "allowed characters", and instead if the array is empty just assume all are allowed. (This also needs to be changed in the case clause)
+        let disallowedCharacters: string[] = [];
+
+        let nAtom = 0;
+        const atomAmountsStack: number[] = [];
+
+        for(let i = 0; i < this.regex.length; i++) {
+            const currentChar = this.regex.at(i);
+            switch(true) {
+                case currentChar === undefined:
+                    throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
+                
+                case disallowedCharacters.includes(currentChar as string):
+                    throw new Error(`Character at ${i} of RegEx cannot be included. This is usually because letters are being used in a Interval Expression.`);
+                
+                case currentChar === "\\" && currentMode !== "escape-next":
+                    currentMode = "escape-next";
+                    currentTempToken += currentChar;
+                    break;
+                
+                case currentChar === "[" && currentMode !== "escape-next" && currentMode !== "character-set":
+                    currentMode = "character-set";
+                    break;
+                
+                case currentChar === "{" && currentMode !== "escape-next" && currentMode !== "character-set":
+
+                    break;
+                
+                case currentChar === "(" && currentMode !== "escape-next" && currentMode !== "character-set":
+
+                    break;
+                
+                case currentChar === "]" && currentMode !== "escape-next":
+                    if(currentMode !== "character-set") {throw new Error(`Unexpected closing square bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
+
+                    break;
+
+                case currentChar === "}" && currentMode !== "escape-next" && currentMode !== "character-set":
+                    if(currentMode !== "interval-expression") {throw new Error(`Unexpected closing curly bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
+
+                    break;
+
+                case currentChar === ")" && currentMode !== "escape-next" && currentMode !== "character-set":
+                    if(atomAmountsStack.length < 1) {throw new Error(`Unexpected closing bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
+
+                    break;
+
+                default:
+                    
+            }
+        }
+
+        if(atomAmountsStack.length !== 0) {throw new Error(`Incorrect amount of opening and/or closing brackets. Amount of missing brackets = ${atomAmountsStack.length}`);}
+        return(tokens);
+    }
+
     convertToPostfix(): string[] {
         let regex = this.regex;
         const tokens: string[] = []; // Character Classes and Interval Expressions (Curly Braces) will take up one Element. Everything else should be just one character.
 
         let operatorStack: OperatorStackElement[] = [];
-        const operatorPriorities: Map<Operators,number> = new Map([["|", 0], ["°", 1], ["*", 2], ["+", 2], ["?", 2]]);
+        const operatorPriorities: Map<Operator,number> = new Map([["|", 0], ["°", 1], ["*", 2], ["+", 2], ["?", 2]]);
 
         const atomAmountsStack: number[] = [];
-        const previousOperatorStacks: OperatorStackElement[][] = []
+        const previousOperatorStacks: OperatorStackElement[][] = [];
         
         let nAtom = 0;
         let nInsideBrackets = 0;
