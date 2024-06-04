@@ -2,6 +2,7 @@ import {insertString} from "../generic_functions.js"
 
 const operators = ["|", "°", "*", "+", "?"] as const;
 type Operator = (typeof operators)[number];
+type TokenType = "default" | "escape-next" | "character-set" | "interval-expression";
 
 interface OperatorStackElement {
     char: Operator;
@@ -29,9 +30,9 @@ export default class ERERegex {
         
         const tokens: string[] = [];
         let currentTempToken = "";
-        let currentMode = "default";
-        // Reminder to set this to "allowed characters", and instead if the array is empty just assume all are allowed. (This also needs to be changed in the case clause)
-        let disallowedCharacters: string[] = [];
+        let currentMode: TokenType = "default";
+        // Empty Array means all characters are allowed.
+        let allowedCharacters: string[] = [];
 
         let nAtom = 0;
         const atomAmountsStack: number[] = [];
@@ -42,7 +43,7 @@ export default class ERERegex {
                 case currentChar === undefined:
                     throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
                 
-                case disallowedCharacters.includes(currentChar as string):
+                case !allowedCharacters.includes(currentChar as string) && allowedCharacters.length > 0:
                     throw new Error(`Character at ${i} of RegEx cannot be included. This is usually because letters are being used in a Interval Expression.`);
                 
                 case currentChar === "\\" && currentMode !== "escape-next":
@@ -52,33 +53,54 @@ export default class ERERegex {
                 
                 case currentChar === "[" && currentMode !== "escape-next" && currentMode !== "character-set":
                     currentMode = "character-set";
+                    currentTempToken += currentChar;
                     break;
                 
                 case currentChar === "{" && currentMode !== "escape-next" && currentMode !== "character-set":
-
+                    currentMode = "interval-expression";
+                    currentTempToken += currentChar;
                     break;
                 
                 case currentChar === "(" && currentMode !== "escape-next" && currentMode !== "character-set":
-
+                    atomAmountsStack.push(nAtom);
+                    nAtom = 0;
+                    currentTempToken += currentChar;
                     break;
                 
                 case currentChar === "]" && currentMode !== "escape-next":
                     if(currentMode !== "character-set") {throw new Error(`Unexpected closing square bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
-
+                    currentMode = "default";
+                    currentTempToken += currentChar;
                     break;
 
                 case currentChar === "}" && currentMode !== "escape-next" && currentMode !== "character-set":
                     if(currentMode !== "interval-expression") {throw new Error(`Unexpected closing curly bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
-
+                    currentMode = "default";
+                    currentTempToken += currentChar;
                     break;
 
                 case currentChar === ")" && currentMode !== "escape-next" && currentMode !== "character-set":
-                    if(atomAmountsStack.length < 1) {throw new Error(`Unexpected closing bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
-
+                    const newNAtom = atomAmountsStack.pop();
+                    if(newNAtom === undefined) {throw new Error(`Unexpected closing bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
+                    nAtom = newNAtom + 1;
+                    currentTempToken += currentChar;
                     break;
 
                 default:
-                    
+                    currentTempToken += currentChar;
+
+                    if(currentMode === "default") {
+                        // Check whether or not there's implicit concatenation and if so add it between the two tokens
+                        if(nAtom > 1) {
+                            // Reminder to handle parantheses correctly, so that it is treated as "one token". (So for example "a(bb)+a" -> "a°(b°b)+°a" not "a(b°b)°+°a")
+                            // Also maybe add a for loop so that it repeatedly checks whether there needs to be more concatenation? This might not be needed however.
+                            tokens.push("°");
+                            nAtom--;
+                        }
+
+                        tokens.push(currentTempToken);
+                        currentTempToken === "";
+                    }
             }
         }
 
