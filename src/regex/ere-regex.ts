@@ -98,7 +98,7 @@ export default class ERERegex {
                             }
                         }
                     }
-                    
+
                     tokens.push(currentTempToken);
                     currentTempToken = "";
                     continue;
@@ -106,6 +106,13 @@ export default class ERERegex {
                 case currentChar === "°" && currentMode !== "escape-next" && currentMode !== "character-set":
                     // This automatically escapes any °s encountered, since for the end-user ° should not be a metacharacter.
                     currentTempToken += "\\";
+                    break;
+
+                case this.isOperator(currentChar as string) && currentMode !== "escape-next" && currentMode !== "character-set":
+                    currentTempToken += currentChar;
+                    tokens.push(currentTempToken);
+                    currentTempToken = "";
+                    continue;
             }
             
             currentTempToken += currentChar;
