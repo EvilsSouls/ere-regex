@@ -62,9 +62,13 @@ export default class ERERegex {
                     continue;
                 
                 case currentChar === "(" && currentMode !== "escape-next" && currentMode !== "character-set":
+                    currentTempToken += currentChar;
+                    
                     atomAmountsStack.push(nAtom);
                     nAtom = 0;
-                    currentTempToken += currentChar;
+                    
+                    tokens.push(currentTempToken);
+                    currentTempToken = "";
                     continue;
                 
                 case currentChar === "]" && currentMode !== "escape-next":
@@ -87,12 +91,16 @@ export default class ERERegex {
                     if(nAtom > 1) {
                         // If implicit concatenation is needed, will add that concatenation before the last open bracket (That isn't escaped).
                         for(let i = -1; i > -tokens.length; i--) {
-                            if(tokens[i] === "(") {
+                            if(tokens.at(i) === "(") {
                                 tokens.splice(i, 0, "°");
+                                nAtom--;
+                                break;
                             }
                         }
                     }
+                    
                     tokens.push(currentTempToken);
+                    currentTempToken = "";
                     continue;
 
                 case currentChar === "°" && currentMode !== "escape-next" && currentMode !== "character-set":
@@ -107,6 +115,8 @@ export default class ERERegex {
             }
 
             if(currentMode === "default") {
+                nAtom++;
+
                 // Check whether or not there's implicit concatenation and if so add it between the two tokens
                 if(nAtom > 1) {
                     // Also maybe add a for loop so that it repeatedly checks whether there needs to be more concatenation? This might not be needed however.
@@ -115,7 +125,7 @@ export default class ERERegex {
                 }
 
                 tokens.push(currentTempToken);
-                currentTempToken === "";
+                currentTempToken = "";
             }
         }
 
