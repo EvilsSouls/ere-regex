@@ -49,58 +49,73 @@ export default class ERERegex {
                 case currentChar === "\\" && currentMode !== "escape-next":
                     currentMode = "escape-next";
                     currentTempToken += currentChar;
-                    break;
+                    continue;
                 
                 case currentChar === "[" && currentMode !== "escape-next" && currentMode !== "character-set":
                     currentMode = "character-set";
                     currentTempToken += currentChar;
-                    break;
+                    continue;
                 
                 case currentChar === "{" && currentMode !== "escape-next" && currentMode !== "character-set":
                     currentMode = "interval-expression";
                     currentTempToken += currentChar;
-                    break;
+                    continue;
                 
                 case currentChar === "(" && currentMode !== "escape-next" && currentMode !== "character-set":
                     atomAmountsStack.push(nAtom);
                     nAtom = 0;
                     currentTempToken += currentChar;
-                    break;
+                    continue;
                 
                 case currentChar === "]" && currentMode !== "escape-next":
                     if(currentMode !== "character-set") {throw new Error(`Unexpected closing square bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
                     currentMode = "default";
-                    currentTempToken += currentChar;
                     break;
 
                 case currentChar === "}" && currentMode !== "escape-next" && currentMode !== "character-set":
                     if(currentMode !== "interval-expression") {throw new Error(`Unexpected closing curly bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
                     currentMode = "default";
-                    currentTempToken += currentChar;
                     break;
 
                 case currentChar === ")" && currentMode !== "escape-next" && currentMode !== "character-set":
                     const newNAtom = atomAmountsStack.pop();
                     if(newNAtom === undefined) {throw new Error(`Unexpected closing bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
                     nAtom = newNAtom + 1;
-                    currentTempToken += currentChar;
-                    break;
 
-                default:
                     currentTempToken += currentChar;
 
-                    if(currentMode === "default") {
-                        // Check whether or not there's implicit concatenation and if so add it between the two tokens
-                        if(nAtom > 1) {
-                            // Reminder to handle parantheses correctly, so that it is treated as "one token". (So for example "a(bb)+a" -> "a°(b°b)+°a" not "a(b°b)°+°a")
-                            // Also maybe add a for loop so that it repeatedly checks whether there needs to be more concatenation? This might not be needed however.
-                            tokens.push("°");
-                            nAtom--;
+                    if(nAtom > 1) {
+                        // If implicit concatenation is needed, will add that concatenation before the last open bracket (That isn't escaped).
+                        for(let i = -1; i > -tokens.length; i--) {
+                            if(tokens[i] === "(") {
+                                tokens.splice(i, 0, "°");
+                            }
                         }
-
-                        tokens.push(currentTempToken);
-                        currentTempToken === "";
                     }
+                    tokens.push(currentTempToken);
+                    continue;
+
+                case currentChar === "°" && currentMode !== "escape-next" && currentMode !== "character-set":
+                    // This automatically escapes any °s encountered, since for the end-user ° should not be a metacharacter.
+                    currentTempToken += "\\";
+            }
+            
+            currentTempToken += currentChar;
+
+            if(currentMode === "escape-next") {
+                currentMode = "default";
+            }
+
+            if(currentMode === "default") {
+                // Check whether or not there's implicit concatenation and if so add it between the two tokens
+                if(nAtom > 1) {
+                    // Also maybe add a for loop so that it repeatedly checks whether there needs to be more concatenation? This might not be needed however.
+                    tokens.push("°");
+                    nAtom--;
+                }
+
+                tokens.push(currentTempToken);
+                currentTempToken === "";
             }
         }
 
