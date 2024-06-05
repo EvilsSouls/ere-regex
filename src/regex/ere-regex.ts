@@ -25,9 +25,6 @@ export default class ERERegex {
     }
 
     tokenize(): string[] {
-        // VERY IMPORTANT REMINDER: Think about whether or not "atomAmountsStack" and "previousOperatorStacks" is needed in this function. And just generally
-        // think about if this actually works, because I'm not sure. Also just finish it in general (with support for normal braces)
-        
         const tokens: string[] = [];
         let currentTempToken = "";
         let currentMode: TokenType = "default";
@@ -50,7 +47,12 @@ export default class ERERegex {
                     currentMode = "escape-next";
                     currentTempToken += currentChar;
                     continue;
-                
+
+                case currentChar === "°" && currentMode !== "escape-next" && currentMode !== "character-set":
+                    // This automatically escapes any °s encountered, since for the end-user ° should not be a metacharacter.
+                    currentTempToken += "\\";
+                    break;
+
                 case currentChar === "[" && currentMode !== "escape-next" && currentMode !== "character-set":
                     currentMode = "character-set";
                     currentTempToken += currentChar;
@@ -79,7 +81,12 @@ export default class ERERegex {
                 case currentChar === "}" && currentMode !== "escape-next" && currentMode !== "character-set":
                     if(currentMode !== "interval-expression") {throw new Error(`Unexpected closing curly bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
                     currentMode = "default";
-                    break;
+
+                case this.isOperator(currentChar as string) && currentMode !== "escape-next" && currentMode !== "character-set":
+                    currentTempToken += currentChar;
+                    tokens.push(currentTempToken);
+                    currentTempToken = "";
+                    continue;
 
                 case currentChar === ")" && currentMode !== "escape-next" && currentMode !== "character-set":
                     const newNAtom = atomAmountsStack.pop();
@@ -102,17 +109,6 @@ export default class ERERegex {
                     tokens.push(currentTempToken);
                     currentTempToken = "";
                     continue;
-
-                case currentChar === "°" && currentMode !== "escape-next" && currentMode !== "character-set":
-                    // This automatically escapes any °s encountered, since for the end-user ° should not be a metacharacter.
-                    currentTempToken += "\\";
-                    break;
-
-                case this.isOperator(currentChar as string) && currentMode !== "escape-next" && currentMode !== "character-set":
-                    currentTempToken += currentChar;
-                    tokens.push(currentTempToken);
-                    currentTempToken = "";
-                    continue;
             }
             
             currentTempToken += currentChar;
@@ -126,7 +122,6 @@ export default class ERERegex {
 
                 // Check whether or not there's implicit concatenation and if so add it between the two tokens
                 if(nAtom > 1) {
-                    // Also maybe add a for loop so that it repeatedly checks whether there needs to be more concatenation? This might not be needed however.
                     tokens.push("°");
                     nAtom--;
                 }
