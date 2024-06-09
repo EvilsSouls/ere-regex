@@ -1,13 +1,8 @@
 import {insertString} from "../generic_functions.js"
 
-const operators = ["|", "°", "*", "+", "?"] as const;
+const operators = ["|", "°", "*", "+", "?", "{"] as const;
 type Operator = (typeof operators)[number];
 type TokenType = "default" | "escape-next" | "character-set" | "interval-expression";
-
-interface OperatorStackElement {
-    char: Operator;
-    priority: number;
-}
 
 interface State {
     
@@ -20,7 +15,7 @@ export default class ERERegex {
         this.regex = regex;
     }
 
-    isOperator(string: string): string is Operator {
+    isOperator(string: any): string is Operator {
         return operators.includes(string as Operator);
     }
 
@@ -28,8 +23,7 @@ export default class ERERegex {
         const tokens: string[] = [];
         let currentTempToken = "";
         let currentMode: TokenType = "default";
-        // Empty Array means all characters are allowed.
-        let allowedCharacters: string[] = [];
+        let allowedCharacters: string[] = []; // Empty Array means all characters are allowed.
 
         let nAtom = 0;
         const atomAmountsStack: number[] = [];
@@ -49,8 +43,7 @@ export default class ERERegex {
                     continue;
 
                 case currentChar === "°" && currentMode !== "escape-next" && currentMode !== "character-set":
-                    // This automatically escapes any °s encountered, since for the end-user ° should not be a metacharacter.
-                    currentTempToken += "\\";
+                    currentTempToken += "\\"; // This automatically escapes any °s encountered, since for the end-user ° should not be a metacharacter.
                     break;
 
                 case currentChar === "[" && currentMode !== "escape-next" && currentMode !== "character-set":
@@ -60,6 +53,7 @@ export default class ERERegex {
                 
                 case currentChar === "{" && currentMode !== "escape-next" && currentMode !== "character-set":
                     currentMode = "interval-expression";
+                    allowedCharacters = ["}", ",", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
                     currentTempToken += currentChar;
                     continue;
                 
@@ -81,8 +75,9 @@ export default class ERERegex {
                 case currentChar === "}" && currentMode !== "escape-next" && currentMode !== "character-set":
                     if(currentMode !== "interval-expression") {throw new Error(`Unexpected closing curly bracket at ${i}. Did you forget to add the opening bracket or escape the closing one?`);}
                     currentMode = "default";
+                    allowedCharacters = [];
 
-                case this.isOperator(currentChar as string) && currentMode !== "escape-next" && currentMode !== "character-set":
+                case this.isOperator(currentChar) && currentMode !== "escape-next" && currentMode !== "character-set":
                     currentTempToken += currentChar;
                     tokens.push(currentTempToken);
                     currentTempToken = "";
@@ -97,7 +92,7 @@ export default class ERERegex {
 
                     if(nAtom > 1) {
                         // If implicit concatenation is needed, will add that concatenation before the last open bracket (That isn't escaped).
-                        for(let i = -1; i > -tokens.length; i--) {
+                        for(let i = -1; i >= -tokens.length; i--) {
                             if(tokens.at(i) === "(") {
                                 tokens.splice(i, 0, "°");
                                 nAtom--;
@@ -135,76 +130,66 @@ export default class ERERegex {
         return(tokens);
     }
 
-    convertToPostfix(): string[] {
-        let regex = this.regex;
-        const tokens: string[] = []; // Character Classes and Interval Expressions (Curly Braces) will take up one Element. Everything else should be just one character.
+    convertToPostfix(tokens: string[]): string[] {
+        const result: string[] = [];
 
-        let operatorStack: OperatorStackElement[] = [];
-        const operatorPriorities: Map<Operator,number> = new Map([["|", 0], ["°", 1], ["*", 2], ["+", 2], ["?", 2]]);
+        const operatorStack: (Operator | "(")[] = [];
+        const operatorPriorities: Map<Operator, number> = new Map([["|", 0], ["°", 1], ["*", 2], ["+", 2], ["?", 2], ["{", 2]]);
 
-        const atomAmountsStack: number[] = [];
-        const previousOperatorStacks: OperatorStackElement[][] = [];
-        
-        let nAtom = 0;
-        let nInsideBrackets = 0;
-        for(let i = 0; i < regex.length; i++) {
-            const currentChar = regex.at(i);
-            switch(currentChar) {
-                case undefined:
-                    throw new Error("Current Char is undefined. This means that the Program has majorly screwed up!!");
-                case "*":
-                case "+":
-                case "?":
-                case "|":
-                case "°":
-                    const basePriority = operatorPriorities.get(currentChar);
-                    if(!basePriority) {throw new Error("Unknown Operator inside operator clause.");}
+        for(let i = 0; i < tokens.length; i++) {
+            const currentToken = tokens[i];
+            const identifyingChar = tokens[0];
 
-                    const operatorStackElement: OperatorStackElement = {char: currentChar, priority: basePriority + (nInsideBrackets * 10)};
-                    const topOperatorStackElement = operatorStack.at(-1);
+            switch(true) {
+                case identifyingChar === undefined:
+                    throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
 
-                    if(topOperatorStackElement && topOperatorStackElement.priority <= operatorStackElement.priority) {
+                case this.isOperator(identifyingChar):
+                    const currentCharPriority = operatorPriorities.get(identifyingChar as Operator) as number;
+                    let topOperator = operatorStack.at(-1);
+                    let topOperatorPriority = operatorPriorities.get(topOperator as string[0] as Operator);
+
+                    while(topOperator && topOperatorPriority && currentCharPriority <= topOperatorPriority) {
                         operatorStack.pop();
-                        tokens.push(topOperatorStackElement.char);
+                        result.push(topOperator);
+
+                        topOperator = operatorStack.at(-1);
+                        topOperatorPriority = operatorPriorities.get(topOperator as string[0] as Operator);
                     }
-                    operatorStack.push(operatorStackElement);
-                    
-                    break;
-                case "(":
-                    nInsideBrackets++;
 
-                    atomAmountsStack.push(nAtom);
-                    nAtom = 0;
+                    operatorStack.push(currentToken as Operator);
 
-                    previousOperatorStacks.push(operatorStack);
-                    operatorStack = [];
+                    // If the operator is one that determines how many times a token can be repeated, then it adds all the operators on the stack to the result, since the repeating operators are already in postfix
+                    // Need to think about if adding THE ENTIRE QUEUE is actually necessary... maybe that isn't the right logic?
+                    if(["*","+","?","{"].includes(identifyingChar)) {
+                        for(let operator = operatorStack.pop(); operator !== undefined && operator !== "("; operator = operatorStack.pop()) {
+                            result.push(operator);
+                        }
+                    }
                     break;
-                case ")":
-                    nInsideBrackets--;
-                    const newNAtom = atomAmountsStack.pop();
-                    const newOperatorStack = previousOperatorStacks.pop();
-                    
-                    if(!newNAtom || !newOperatorStack) {throw new Error("Unexpected closing Bracket. Did you forget to escape it?");}
 
-                    operatorStack.reverse().forEach((currentOperator) => {tokens.push(currentOperator.char);});
-                    
-                    nAtom = newNAtom + 1;
-                    operatorStack = newOperatorStack;
+                case identifyingChar === "(":
+                    operatorStack.push(currentToken as "(");
                     break;
+
+                case identifyingChar === ")":
+                    for(let operator = operatorStack.pop(); operator !== undefined && operator !== "("; operator = operatorStack.pop()) {
+                        result.push(operator);
+                    }
+                    // Is this actually necessary?
+                    operatorStack.pop();
+                    break;
+
                 default:
-                    tokens.push(currentChar);
-                    nAtom++;
-
-                    if(nAtom > 1) {
-                        regex = insertString(regex, "°", i + 1);
-                        nAtom--;
-                    }
+                    result.push(currentToken);
             }
         }
 
-        if(nInsideBrackets !== 0) {throw new Error(`Incorrect amount of opening and/or closing brackets. nInsideBrackets = ${nInsideBrackets}`);}
+        // Need to check if this for loop actually works
+        for(let operator = operatorStack.pop(); operator !== undefined && operator !== "("; operator = operatorStack.pop()) {
+            result.push(operator);
+        }
 
-        operatorStack.reverse().forEach((currentOperator) => {tokens.push(currentOperator.char);});
-        return(tokens);
+        return(result);
     }
 }
