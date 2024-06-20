@@ -78,6 +78,8 @@ export default class ERERegex {
                     allowedCharacters = [];
 
                 case this.isOperator(currentChar) && currentMode !== "escape-next" && currentMode !== "character-set":
+                    if(currentChar === "|") {nAtom--;} // Decreases nAtom since alternation causes combines two tokens into one.
+                
                     currentTempToken += currentChar;
                     tokens.push(currentTempToken);
                     currentTempToken = "";
@@ -138,46 +140,37 @@ export default class ERERegex {
 
         for(let i = 0; i < tokens.length; i++) {
             const currentToken = tokens[i];
-            const identifyingChar = tokens[0];
+            const identifyingChar = currentToken[0];
 
-            switch(true) {
-                case identifyingChar === undefined:
+            switch(identifyingChar) {
+                case undefined:
                     throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
 
-                case this.isOperator(identifyingChar):
-                    const currentCharPriority = operatorPriorities.get(identifyingChar as Operator) as number;
+                case "°":
+                case "|":
+                    const currentCharPriority = operatorPriorities.get(identifyingChar) as number;
                     let topOperator = operatorStack.at(-1);
-                    let topOperatorPriority = operatorPriorities.get(topOperator as string[0] as Operator);
+                    let topOperatorPriority = operatorPriorities.get(topOperator as Operator);
 
                     while(topOperator && topOperatorPriority && currentCharPriority <= topOperatorPriority) {
                         operatorStack.pop();
                         result.push(topOperator);
 
                         topOperator = operatorStack.at(-1);
-                        topOperatorPriority = operatorPriorities.get(topOperator as string[0] as Operator);
+                        topOperatorPriority = operatorPriorities.get(topOperator as Operator);
                     }
 
                     operatorStack.push(currentToken as Operator);
-
-                    // If the operator is one that determines how many times a token can be repeated, then it adds all the operators on the stack to the result, since the repeating operators are already in postfix
-                    // Need to think about if adding THE ENTIRE QUEUE is actually necessary... maybe that isn't the right logic?
-                    if(["*","+","?","{"].includes(identifyingChar)) {
-                        for(let operator = operatorStack.pop(); operator !== undefined && operator !== "("; operator = operatorStack.pop()) {
-                            result.push(operator);
-                        }
-                    }
                     break;
 
-                case identifyingChar === "(":
+                case "(":
                     operatorStack.push(currentToken as "(");
                     break;
 
-                case identifyingChar === ")":
+                case ")":
                     for(let operator = operatorStack.pop(); operator !== undefined && operator !== "("; operator = operatorStack.pop()) {
                         result.push(operator);
                     }
-                    // Is this actually necessary?
-                    operatorStack.pop();
                     break;
 
                 default:
