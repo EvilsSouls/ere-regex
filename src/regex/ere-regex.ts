@@ -1,12 +1,8 @@
-import {insertString} from "../generic_functions.js"
+import State from "./state"
 
 const operators = ["|", "°", "*", "+", "?", "{"] as const;
 type Operator = (typeof operators)[number];
 type TokenType = "default" | "escape-next" | "character-set" | "interval-expression";
-
-interface State {
-    
-}
 
 export default class ERERegex {
     readonly regex: string;
@@ -19,7 +15,7 @@ export default class ERERegex {
         return operators.includes(string as Operator);
     }
 
-    tokenize(): string[] {
+    tokenize(regex: string): string[] {
         const tokens: string[] = [];
         let currentTempToken = "";
         let currentMode: TokenType = "default";
@@ -28,8 +24,8 @@ export default class ERERegex {
         let nAtom = 0;
         const atomAmountsStack: number[] = [];
 
-        for(let i = 0; i < this.regex.length; i++) {
-            const currentChar = this.regex.at(i);
+        for(let i = 0; i < regex.length; i++) {
+            const currentChar = regex.at(i);
             switch(true) {
                 case currentChar === undefined:
                     throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
@@ -78,7 +74,7 @@ export default class ERERegex {
                     allowedCharacters = [];
 
                 case this.isOperator(currentChar) && currentMode !== "escape-next" && currentMode !== "character-set":
-                    if(currentChar === "|") {nAtom--;} // Decreases nAtom since alternation causes combines two tokens into one.
+                    if(currentChar === "|") {nAtom--;} // Decreases nAtom since alternation combines two tokens into one.
                 
                     currentTempToken += currentChar;
                     tokens.push(currentTempToken);
@@ -184,5 +180,43 @@ export default class ERERegex {
         }
 
         return(result);
+    }
+
+    buildNFA(tokens: string[]) {
+        const fragmentStack: State[][] = [];
+        const nfa: State[] = [];
+        
+        for(let i = 0; i < tokens.length; i++) {
+            switch(tokens[i]) {
+                case "|":
+                    break;
+
+                case "°":
+                    const nfaFragment1 = fragmentStack.pop();
+                    const nfaFragment2 = fragmentStack.pop();
+
+                    if(!nfaFragment1 || !nfaFragment2) {throw new Error(`Concatenation Operator expects 2 fragments on stack, yet there are none.`);}
+
+                    nfaFragment1.at(-1)?.patch(1);
+                    const newFragment = nfaFragment1.concat(nfaFragment2);
+                    fragmentStack.push(newFragment);
+                    break;
+
+                case "*":
+                    break;
+
+                case "+":
+                    break;
+
+                case "?":
+                    break;
+
+                case "{": // Still need to fix this not working, due to being longer than 1 character. Maybe change this to the thing with identifyingCharacter??
+                    break;
+
+                default:
+
+            }
+        }
     }
 }
