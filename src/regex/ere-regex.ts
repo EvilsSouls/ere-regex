@@ -188,34 +188,46 @@ export default class ERERegex {
         
         for(let i = 0; i < tokens.length; i++) {
             switch(tokens[i]) {
-                case "|":
-                    break;
+                case "|": {
+                    const alternativeFragment1 = fragmentStack.pop();
+                    const alternativeFragment2 = fragmentStack.pop();
 
-                case "°":
+                    if(!alternativeFragment1 || !alternativeFragment2) {throw new Error(`Alternation Operator expects 2 fragments on stack, yet either one or both is undefined.`);}
+
+                    const branchingState = new State();
+                    branchingState.addConnection(1);
+                    branchingState.addConnection(alternativeFragment1.length + 1);
+
+                    const newFragment: State[] = [branchingState].concat(alternativeFragment1, alternativeFragment2);
+                    fragmentStack.push(newFragment);
+                    break;
+                }
+                case "°": {
                     const nfaFragment1 = fragmentStack.pop();
                     const nfaFragment2 = fragmentStack.pop();
 
-                    if(!nfaFragment1 || !nfaFragment2) {throw new Error(`Concatenation Operator expects 2 fragments on stack, yet there are none.`);}
+                    if(!nfaFragment1 || !nfaFragment2) {throw new Error(`Concatenation Operator expects 2 fragments on stack, yet either one or both is undefined.`);}
 
                     nfaFragment1.at(-1)?.patch(1);
                     const newFragment = nfaFragment1.concat(nfaFragment2);
                     fragmentStack.push(newFragment);
                     break;
-
-                case "*":
+                }
+                case "*": {
                     break;
-
-                case "+":
+                }
+                case "+": {
                     break;
-
-                case "?":
+                }
+                case "?": {
                     break;
-
-                case "{": // Still need to fix this not working, due to being longer than 1 character. Maybe change this to the thing with identifyingCharacter??
+                }
+                case "{": { // Still need to fix this not working, due to being longer than 1 character. Maybe change this to the thing with identifyingCharacter??
                     break;
+                }
+                default: {
 
-                default:
-
+                }
             }
         }
     }
