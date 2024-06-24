@@ -182,17 +182,22 @@ export default class ERERegex {
         return(result);
     }
 
-    buildNFA(tokens: string[]) {
+    /**
+     * @todo Maybe change the fragments from the type State[] to a specialized type called something like Fragment. This would have a getter / setter for easily modifying the latest state?
+     */
+    buildNFA(tokens: string[]): State[] {
         const fragmentStack: State[][] = [];
-        const nfa: State[] = [];
         
         for(let i = 0; i < tokens.length; i++) {
             switch(tokens[i]) {
+                case undefined: {
+                    throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
+                }
                 case "|": {
                     const alternativeFragment1 = fragmentStack.pop();
                     const alternativeFragment2 = fragmentStack.pop();
 
-                    if(!alternativeFragment1 || !alternativeFragment2) {throw new Error(`Alternation Operator expects 2 fragments on stack, yet either one or both is undefined.`);}
+                    if(!alternativeFragment1 || !alternativeFragment2) {throw new Error("Alternation Operator expects 2 fragments on stack, yet either one or both is undefined.");}
 
                     const branchingState = new State();
                     branchingState.addConnection(1);
@@ -206,29 +211,70 @@ export default class ERERegex {
                     const nfaFragment1 = fragmentStack.pop();
                     const nfaFragment2 = fragmentStack.pop();
 
-                    if(!nfaFragment1 || !nfaFragment2) {throw new Error(`Concatenation Operator expects 2 fragments on stack, yet either one or both is undefined.`);}
+                    if(!nfaFragment1 || !nfaFragment2) {throw new Error("Concatenation Operator expects 2 fragments on stack, yet either one or both is undefined.");}
 
-                    nfaFragment1.at(-1)?.patch(1);
+                    nfaFragment1.at(-1)?.patch(1); // Need to check if .at(-1) returns a reference
                     const newFragment = nfaFragment1.concat(nfaFragment2);
                     fragmentStack.push(newFragment);
                     break;
                 }
                 case "*": {
+                    const nfaFragment = fragmentStack.pop();
+                    const lastState = nfaFragment?.at(-1);
+
+                    if(!nfaFragment || !lastState) {throw new Error("Kleene Star expects a fragment on stack, yet there are none.");}
+
+                    const branchingState = new State();
+                    branchingState.addConnection(1);
+                    branchingState.addConnection(undefined);
+                    lastState.patch(-nfaFragment.length); // Is -nfaFragment.length actually correct or is it off by one?
+
+                    nfaFragment[nfaFragment.length - 1] = lastState;
+
+                    const newFragment: State[] = [branchingState].concat(nfaFragment);
+                    fragmentStack.push(newFragment);
                     break;
                 }
                 case "+": {
+                    const nfaFragment = fragmentStack.pop()
+                    const lastState = nfaFragment?.at(-1);
+
+                    if(!nfaFragment || !lastState) {throw new Error("Plus Quantifier expects a fragment on stack, yet there are none.");}
+
+                    lastState.addConnection(-nfaFragment.length);
+
+                    nfaFragment[nfaFragment.length - 1] = lastState;
+                    fragmentStack.push(nfaFragment);
                     break;
                 }
                 case "?": {
+                    const nfaFragment = fragmentStack.pop()
+
+                    if(!nfaFragment) {throw new Error("Question Mark Quantifier expects a fragment on stack, yet there are none.");}
+
+                    const branchingState = new State();
+                    branchingState.addConnection(1);
+                    branchingState.addConnection(nfaFragment.length + 1);
+
+                    const newFragment: State[] = [branchingState].concat(nfaFragment);
+                    fragmentStack.push(newFragment);
                     break;
                 }
                 case "{": { // Still need to fix this not working, due to being longer than 1 character. Maybe change this to the thing with identifyingCharacter??
                     break;
                 }
                 default: {
-
+                    const state = new State()
+                    state.addConnection(1, tokens[i]);
+                    const newFragment: State[] = [state];
+                    fragmentStack.push(newFragment);
                 }
             }
         }
+
+        if(fragmentStack.length !== 1) {throw new Error("Fragment Stack has not been concatenated fully. This is usually because of a bad regex.")}
+
+        const nfa: State[] = fragmentStack[0];
+        return(nfa);
     }
 }
