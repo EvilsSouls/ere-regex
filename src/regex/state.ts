@@ -5,7 +5,7 @@ interface Connection {
 }
 
 export default class State {
-    protected connections: Connection[];
+    readonly connections: Connection[];
 
     constructor() {
         this.connections = [];
@@ -15,7 +15,7 @@ export default class State {
      * @description Joins all connections of a state to one new state. WILL relative pointer even if it's not undefined.
      * @param pointer The relative pointer to which the connection(s) should point to
      */
-    patch(pointer: number) {
+    patch(pointer: number): void {
         for(let i = 0; i < this.connections.length; i++) {
             if(this.connections[i].relativePointingIndex !== undefined) {console.warn("Patching together already defined connection! This will most definitly lead to mistakes.");}
             this.connections[i].relativePointingIndex = pointer;
@@ -28,7 +28,7 @@ export default class State {
      * @param maximum The minimum amount of crossings that this connection needs to actually match the string.
      * @param minimum The maximmum amount of crossings that this connection needs to actually match the string.
      */
-    addConnection(relativePointingIndex: number | undefined | null, character?: string, maximum?: number, minimum?: number) {
+    addConnection(relativePointingIndex: number | undefined | null, character?: string, maximum?: number, minimum?: number): void {
         const connection: Connection = {
             numCrossing: 0,
             relativePointingIndex: relativePointingIndex,
