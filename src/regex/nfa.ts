@@ -15,14 +15,25 @@ export default class NFA extends Array<State> {
         this.concat(addend);
     }
 
-    printNFA(nfa: NFA = this): string[] {
+    visualizeNFA(nfa: NFA = this): SVGElement {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg:ere-visualization");
+
+        return(svg);
+    }
+
+    /*printNFA(nfa: NFA = this): string[] {
         for(let pointers: number[] = []; true;) {
             for(let i = 0; i < pointers.length; i++) {
                 const currentPointer = pointers[i];
                 const currentState = nfa[currentPointer];
 
                 if(currentState.connections.length > 1) {
-                    // Probably will need another for loop to loop over all the new connections and add their pointers to the pointers array.
+                    for(let i = 0; i < currentState.connections.length; i++) {
+                        const relativePointingIndex = currentState.connections[i].relativePointingIndex
+                        if(!relativePointingIndex) {throw new Error("Not implemented yet!!");}
+                        const newPointer = currentPointer + relativePointingIndex;
+                        pointers.push(newPointer);
+                    }
                 }
 
                 // Reminder that this needs to be converted into string[]
@@ -32,5 +43,5 @@ export default class NFA extends Array<State> {
         }
 
         return(["This is tempoary!!"]);
-    }
+    }*/
 }
