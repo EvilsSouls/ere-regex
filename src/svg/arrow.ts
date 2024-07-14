@@ -1,5 +1,3 @@
-import {replaceStringAtIndex} from "../generic_functions";
-
 export default class Arrow {
     arrow: SVGPathElement;
     svgImage: SVGSVGElement;
@@ -30,67 +28,80 @@ export default class Arrow {
     }
 
     set x(x: number) {
-        let originalPathData = this.arrow.getAttribute("d") as string;
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        pathDataArray[1] = `${x}`;
 
-        this.arrow.setAttribute("d", replaceStringAtIndex(originalPathData, `${x}`, 2));
+        this.arrow.setAttribute("d", pathDataArray.join(" "));
     }
 
     get x(): number {
-        return(parseInt(this.arrow.getAttribute("d") as string[2]), 10);
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        return(parseInt(pathDataArray[1]), 10);
     }
 
     set y(y: number) {
-        let originalPathData = this.arrow.getAttribute("d") as string;
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        pathDataArray[2] = `${y}`;
 
-        this.arrow.setAttribute("d", replaceStringAtIndex(originalPathData, `${y}`, 4));
+        this.arrow.setAttribute("d", pathDataArray.join(" "));
     }
 
     get y(): number {
-        return(parseInt(this.arrow.getAttribute("d") as string[4]), 10);
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        return(parseInt(pathDataArray[2]), 10);
     }
 
     set targetX(x: number) {
-        let originalPathData = this.arrow.getAttribute("d") as string;
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        pathDataArray[4] = `${x}`;
 
-        this.arrow.setAttribute("d", replaceStringAtIndex(originalPathData, `${x}`, 8));
+        this.arrow.setAttribute("d", pathDataArray.join(" "));
     }
 
     get targetX(): number {
-        return(parseInt(this.arrow.getAttribute("d") as string[8]), 10);
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        return(parseInt(pathDataArray[4]), 10);
     }
 
     set targetY(y: number) {
-        let originalPathData = this.arrow.getAttribute("d") as string;
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        pathDataArray[5] = `${y}`;
 
-        this.arrow.setAttribute("d", replaceStringAtIndex(originalPathData, `${y}`, 10));
+        this.arrow.setAttribute("d", pathDataArray.join(" "));
     }
 
     get targetY(): number {
-        return(parseInt(this.arrow.getAttribute("d") as string[10]), 10);
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        return(parseInt(pathDataArray[5]), 10);
     }
 
     set ctrlpntX(x: number) {
         if(this.type !== "bezier") {throw new Error("Cannot assign ctrlpntX, because type is not bezier");}
 
-        let originalPathData = this.arrow.getAttribute("d") as string;
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        pathDataArray[6] = `${x}`;
 
-        this.arrow.setAttribute("d", replaceStringAtIndex(originalPathData, `${x}`, 12));
+        this.arrow.setAttribute("d", pathDataArray.join(" "));
     }
 
     get ctrlpntX(): number {
         if(this.type !== "bezier") {throw new Error("Cannot get ctrlpntX, because type is not bezier");}
-        return(parseInt(this.arrow.getAttribute("d") as string[12]), 10);
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        return(parseInt(pathDataArray[6]), 10);
     }
 
     set ctrlpntY(y: number) {
         if(this.type !== "bezier") {throw new Error("Cannot assign ctrlpntY, because type is not bezier");}
-        let originalPathData = this.arrow.getAttribute("d") as string;
 
-        this.arrow.setAttribute("d", replaceStringAtIndex(originalPathData, `${y}`, 14));
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        pathDataArray[7] = `${y}`;
+
+        this.arrow.setAttribute("d", pathDataArray.join(" "));
     }
 
     get ctrlpntY(): number {
         if(this.type !== "bezier") {throw new Error("Cannot get ctrlpntY, because type is not bezier");}
-        return(parseInt(this.arrow.getAttribute("d") as string[2]), 14);
+        const pathDataArray = this.arrow.getAttribute("d")?.split(" ") as string[];
+        return(parseInt(pathDataArray[7]), 14);
     }
 }

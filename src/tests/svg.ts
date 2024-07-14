@@ -10,9 +10,10 @@ rectangle.setAttribute("y", "50");
 rectangle.setAttribute('height', '25');
 rectangle.setAttribute('width', '25');
 rectangle.setAttribute('fill', "#000000");
-svg.appendChild(rectangle);
+svg.appendChild(rectangle);*/
 
 const divElement = document.getElementById("content-container");
-divElement?.appendChild(svg);*/
+divElement?.appendChild(svg);
 
 new Rectangle(svg, 50, 50, 25, 25);
+new Arrow(svg, 75, 75, 100, 50, "straight");

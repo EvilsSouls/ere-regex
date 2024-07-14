@@ -7,7 +7,3 @@
 export function insertString(string: string, substring: string, index: number): string {
     return(`${string.slice(0, index)}${substring}${string.slice(index)}`);
 }
-
-export function replaceStringAtIndex(string: string, replacement: string, index: number): string {
-    return(`${string.slice(0, index - 1)}${replacement}${string.slice(index + replacement.length - 1)}`)
-}
