@@ -12,6 +12,7 @@ export default class Arrow {
         this.arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
         if(type === "straight") {this.arrow.setAttribute("d", "M 0 0 L 0 0");} else {this.arrow.setAttribute("d", "M 0 0 Q 0 0 0 0");}
+        this.arrow.setAttribute("style", "fill:none;stroke:black;stroke-width:3");
 
         this.svgImage = svgImage;
         this.x = x;
@@ -23,6 +24,29 @@ export default class Arrow {
             this.ctrlpntX = ctrlpntX as number;
             this.ctrlpntY = ctrlpntY as number;
         }
+
+        if(!document.getElementById("arrow-head")) {
+            const definitions = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            
+            const arrowMarkerEl = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+            arrowMarkerEl.id = "arrow-head";
+            arrowMarkerEl.setAttribute("markerWidth", "10");
+            arrowMarkerEl.setAttribute("markerHeight", "10");
+            arrowMarkerEl.setAttribute("refX", "5");
+            arrowMarkerEl.setAttribute("refY", "5");
+            arrowMarkerEl.setAttribute("refX", "5");
+            arrowMarkerEl.setAttribute("orient", "auto");
+
+            const arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            arrow.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+            arrow.setAttribute("fill", "black");
+
+            arrowMarkerEl.appendChild(arrow);
+            definitions.appendChild(arrowMarkerEl);
+            svgImage.appendChild(definitions);
+        }
+
+        this.arrow.setAttribute("marker-end", "url(#arrow-head)");
 
         svgImage.appendChild(this.arrow);
     }

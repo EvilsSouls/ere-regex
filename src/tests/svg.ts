@@ -3,6 +3,8 @@ import Arrow from "../svg/arrow";
 
 const svgns = "http://www.w3.org/2000/svg";
 const svg = document.createElementNS(svgns, "svg");
+svg.setAttribute("width", "100%");
+svg.setAttribute("height", "100%");
 
 /*const rectangle = document.createElementNS(svgns, "rect");
 rectangle.setAttribute("x", "50");
@@ -16,4 +18,4 @@ const divElement = document.getElementById("content-container");
 divElement?.appendChild(svg);
 
 new Rectangle(svg, 50, 50, 25, 25);
-new Arrow(svg, 75, 75, 100, 50, "straight");
+new Arrow(svg, 8, 800, 260, 520, "straight");
