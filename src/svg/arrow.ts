@@ -2,10 +2,11 @@ export default class Arrow {
     arrow: SVGPathElement;
     svgImage: SVGSVGElement;
     type: "straight" | "bezier";
+    private labelEl!: SVGTextElement;
     
-    constructor(svgImage: SVGSVGElement, x: number, y: number, targetX: number, targetY: number, ctrlpntX: number, ctrlpntY: number, type: "bezier")
-    constructor(svgImage: SVGSVGElement, x: number, y: number, targetX: number, targetY: number, type: "straight")
-    constructor(svgImage: SVGSVGElement, x: number, y: number, targetX: number, targetY: number, ctrlpntXOrType: number | "straight", ctrlpntY?: number, tempType?: "bezier") {
+    constructor(svgImage: SVGSVGElement, label: string, x: number, y: number, targetX: number, targetY: number, ctrlpntX: number, ctrlpntY: number, type: "bezier")
+    constructor(svgImage: SVGSVGElement, label: string, x: number, y: number, targetX: number, targetY: number, type: "straight")
+    constructor(svgImage: SVGSVGElement, label: string, x: number, y: number, targetX: number, targetY: number, ctrlpntXOrType: number | "straight", ctrlpntY?: number, tempType?: "bezier") {
         let type: "straight" | "bezier" | undefined;
         let ctrlpntX: number | undefined;
         if(!tempType) {type = ctrlpntXOrType as "straight";} else {ctrlpntX = ctrlpntXOrType as number; type = tempType}
@@ -24,6 +25,7 @@ export default class Arrow {
             this.ctrlpntX = ctrlpntX as number;
             this.ctrlpntY = ctrlpntY as number;
         }
+        this.label = label;
 
         if(!document.getElementById("arrow-head")) {
             const definitions = document.createElementNS("http://www.w3.org/2000/svg", "defs");
@@ -49,6 +51,27 @@ export default class Arrow {
         this.arrow.setAttribute("marker-end", "url(#arrow-head)");
 
         svgImage.appendChild(this.arrow);
+        svgImage.appendChild(this.labelEl);
+    }
+
+    set label(label: string) {
+        if(!this.labelEl) {
+            this.labelEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            this.labelEl.setAttribute("style", "fill:black;font-size:25px");
+
+            const textPath = document.createElementNS("http://www.w3.org/2000/svg", "textPath");
+            textPath.setAttribute("path", this.arrow.getAttribute("d") as string);
+
+            this.labelEl.appendChild(textPath);
+        }
+
+        const textPath = this.labelEl.firstChild as SVGTextPathElement;
+        textPath.textContent = label;
+    }
+
+    get label(): string {
+        const textPath = this.labelEl.firstChild as SVGTextPathElement;
+        return(textPath.textContent as string);
     }
 
     set x(x: number) {

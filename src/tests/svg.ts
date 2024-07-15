@@ -17,5 +17,5 @@ svg.appendChild(rectangle);*/
 const divElement = document.getElementById("content-container");
 divElement?.appendChild(svg);
 
-new Rectangle(svg, 50, 50, 25, 25);
-new Arrow(svg, 8, 800, 260, 520, "straight");
+//new Rectangle(svg, 50, 50, 25, 25);
+const arrow = new Arrow(svg, "Hello World!", 250, 250, 500, 250, "straight");
