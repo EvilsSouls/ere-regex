@@ -13,7 +13,7 @@ export default class Arrow {
         this.arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
         if(type === "straight") {this.arrow.setAttribute("d", "M 0 0 L 0 0");} else {this.arrow.setAttribute("d", "M 0 0 Q 0 0 0 0");}
-        this.arrow.setAttribute("style", "fill:none;stroke:black;stroke-width:3");
+        this.arrow.setAttribute("style", "fill:none;stroke:#ff6666;stroke-width:3");
 
         this.svgImage = svgImage;
         this.x = x;
@@ -41,7 +41,7 @@ export default class Arrow {
 
             const arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
             arrow.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
-            arrow.setAttribute("fill", "black");
+            arrow.setAttribute("fill", "#ff6666");
 
             arrowMarkerEl.appendChild(arrow);
             definitions.appendChild(arrowMarkerEl);
@@ -57,10 +57,11 @@ export default class Arrow {
     set label(label: string) {
         if(!this.labelEl) {
             this.labelEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            this.labelEl.setAttribute("style", "fill:black;font-size:25px");
+            this.labelEl.setAttribute("style", "fill:black;font-size:15px");
 
             const textPath = document.createElementNS("http://www.w3.org/2000/svg", "textPath");
             textPath.setAttribute("path", this.arrow.getAttribute("d") as string);
+            textPath.setAttribute("startOffset", "10%");
 
             this.labelEl.appendChild(textPath);
         }

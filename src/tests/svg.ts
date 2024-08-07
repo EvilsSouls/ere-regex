@@ -18,4 +18,4 @@ const divElement = document.getElementById("content-container");
 divElement?.appendChild(svg);
 
 //new Rectangle(svg, 50, 50, 25, 25);
-const arrow = new Arrow(svg, "Hello World!", 250, 250, 500, 250, "straight");
+const arrow = new Arrow(svg, "test", 250, 250, 500, 250, 750, 750, "bezier");

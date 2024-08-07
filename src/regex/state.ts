@@ -1,6 +1,6 @@
 interface Connection {
     numCrossing: number;
-    relativePointingIndex: number | undefined | null; // Null = Matching State
+    relativePointingIndex: number | undefined | null; // Null = Matching State; Undefined = Floating Arrow; Number = Relative Pointer
     condition: {character?: string; maximum?: number; minimum?: number};
 }
 
@@ -12,13 +12,12 @@ export default class State {
     }
 
     /**
-     * @description Joins all connections of a state to one new state. WILL relative pointer even if it's not undefined.
+     * @description Joins all connections of a state to one new state. WILL replace relative pointer even if it's not undefined.
      * @param pointer The relative pointer to which the connection(s) should point to
      */
     patch(pointer: number): void {
         for(let i = 0; i < this.connections.length; i++) {
-            if(this.connections[i].relativePointingIndex !== undefined) {console.warn("Patching together already defined connection! This will most definitly lead to mistakes.");}
-            this.connections[i].relativePointingIndex = pointer;
+            if(this.connections[i].relativePointingIndex === undefined) {this.connections[i].relativePointingIndex = pointer;}
         }
     }
 

@@ -1,7 +1,9 @@
 import ERERegex from "./regex/ere-regex.js";
 
-const testRegex = new ERERegex("a.*b");
+const testRegex = new ERERegex("abcd");
 
-console.log(testRegex.buildNFA(testRegex.convertToPostfix(testRegex.tokenize(testRegex.regex))));
+const nfa = testRegex.buildNFA(testRegex.convertToPostfix(testRegex.tokenize(testRegex.regex)));
+console.log(nfa);
+document.getElementById("page-container")?.appendChild(nfa.visualizeNFA())
 
 debugger;

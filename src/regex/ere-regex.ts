@@ -1,4 +1,5 @@
-import State from "./state"
+import State from "./state";
+import NFA from "./nfa";
 
 const operators = ["|", "°", "*", "+", "?", "{"] as const;
 type Operator = (typeof operators)[number];
@@ -185,8 +186,8 @@ export default class ERERegex {
     /**
      * @todo Maybe change the fragments from the type State[] to a specialized type called something like Fragment. This would have a getter / setter for easily modifying the latest state?
      */
-    buildNFA(tokens: string[]): State[] {
-        const fragmentStack: State[][] = [];
+    buildNFA(tokens: string[]): NFA {
+        const fragmentStack: NFA[] = [];
         
         for(let i = 0; i < tokens.length; i++) {
             switch(tokens[i]) {
@@ -199,11 +200,8 @@ export default class ERERegex {
 
                     if(!alternativeFragment1 || !alternativeFragment2) {throw new Error("Alternation Operator expects 2 fragments on stack, yet either one or both is undefined.");}
 
-                    const branchingState = new State();
-                    branchingState.addConnection(1);
-                    branchingState.addConnection(alternativeFragment1.length + 1);
-
-                    const newFragment: State[] = [branchingState].concat(alternativeFragment1, alternativeFragment2);
+                    const newFragment = new NFA();
+                    newFragment.addBranches(alternativeFragment1, alternativeFragment2);
                     fragmentStack.push(newFragment);
                     break;
                 }
@@ -213,9 +211,8 @@ export default class ERERegex {
 
                     if(!nfaFragment1 || !nfaFragment2) {throw new Error("Concatenation Operator expects 2 fragments on stack, yet either one or both is undefined.");}
 
-                    nfaFragment1.at(-1)?.patch(1); // Need to check if .at(-1) returns a reference
-                    const newFragment = nfaFragment1.concat(nfaFragment2);
-                    fragmentStack.push(newFragment);
+                    nfaFragment1.joinNFAs(nfaFragment2);
+                    fragmentStack.push(nfaFragment1);
                     break;
                 }
                 case "*": {
@@ -224,14 +221,14 @@ export default class ERERegex {
 
                     if(!nfaFragment || !lastState) {throw new Error("Kleene Star expects a fragment on stack, yet there are none.");}
 
-                    const branchingState = new State();
-                    branchingState.addConnection(1);
-                    branchingState.addConnection(undefined);
-                    lastState.patch(-nfaFragment.length); // Is -nfaFragment.length actually correct or is it off by one?
-
+                    lastState.addConnection(-nfaFragment.length); // Need to check whether or not this is the right amount (to return back to Branching State)
                     nfaFragment[nfaFragment.length - 1] = lastState;
 
-                    const newFragment: State[] = [branchingState].concat(nfaFragment);
+                    const newFragment = new NFA();
+                    newFragment.addBranches(nfaFragment);
+                    // Adds a Floating Arrow connection from the Branching State to finish the Fragment Schema
+                    newFragment[0].addConnection(undefined);
+                    
                     fragmentStack.push(newFragment);
                     break;
                 }
@@ -242,8 +239,8 @@ export default class ERERegex {
                     if(!nfaFragment || !lastState) {throw new Error("Plus Quantifier expects a fragment on stack, yet there are none.");}
 
                     lastState.addConnection(-nfaFragment.length);
-
                     nfaFragment[nfaFragment.length - 1] = lastState;
+                    
                     fragmentStack.push(nfaFragment);
                     break;
                 }
@@ -252,11 +249,11 @@ export default class ERERegex {
 
                     if(!nfaFragment) {throw new Error("Question Mark Quantifier expects a fragment on stack, yet there are none.");}
 
-                    const branchingState = new State();
-                    branchingState.addConnection(1);
-                    branchingState.addConnection(nfaFragment.length + 1);
+                    const newFragment = new NFA();
+                    newFragment.addBranches(nfaFragment);
+                    // Adds a Floating Arrow connection from the Branching State to finish the Fragment Schema
+                    newFragment[0].addConnection(undefined);
 
-                    const newFragment: State[] = [branchingState].concat(nfaFragment);
                     fragmentStack.push(newFragment);
                     break;
                 }
@@ -265,8 +262,8 @@ export default class ERERegex {
                 }
                 default: {
                     const state = new State()
-                    state.addConnection(1, tokens[i]);
-                    const newFragment: State[] = [state];
+                    state.addConnection(undefined, tokens[i]);
+                    const newFragment = new NFA(state);
                     fragmentStack.push(newFragment);
                 }
             }
@@ -274,7 +271,7 @@ export default class ERERegex {
 
         if(fragmentStack.length !== 1) {throw new Error("Fragment Stack has not been concatenated fully. This is usually because of a bad regex.")}
 
-        const nfa: State[] = fragmentStack[0];
+        const nfa = fragmentStack[0];
         return(nfa);
     }
 }
