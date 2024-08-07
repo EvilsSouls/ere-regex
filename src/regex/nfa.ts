@@ -11,7 +11,17 @@ interface VisualPointer {
 export default class NFA extends Array<State> {
     constructor(...states: State[]) {
         super();
-        this.concat(states);
+        this.concatArrays(...states);
+    }
+
+    /**
+     * @summary Combines two or more arrays. This method modifies `this` unlike the built-in concat method.
+     * @param items Additional arrays and/or items to add to the end of the array.
+     */
+    concatArrays(...items: State[]): void {
+        for(let i = 0; i < items.length; i++) {
+            this.push(items[i]);
+        }
     }
 
     /**
@@ -23,7 +33,7 @@ export default class NFA extends Array<State> {
         for(let i = 0; i < this.length; i++) {
             this[i].patch(this.length - i);
         }
-        this.concat(addend);
+        this.concatArrays(...addend);
     }
 
     /**
@@ -43,6 +53,9 @@ export default class NFA extends Array<State> {
         this.joinNFAs(newFragment);
     }
 
+    /**
+     * @todo Just finish this lmao
+     */
     visualizeNFA(nfa: NFA = this): SVGElement {
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         new Arrow(svg, "", 0, parseInt(`${svg.height}`, 10) / 2, 50, parseInt(`${svg.height}`, 10) / 2, "straight");

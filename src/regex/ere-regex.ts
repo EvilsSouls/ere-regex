@@ -185,6 +185,7 @@ export default class ERERegex {
 
     /**
      * @todo Maybe change the fragments from the type State[] to a specialized type called something like Fragment. This would have a getter / setter for easily modifying the latest state?
+     * @todo For some reason the fragments are in reversed order?? doesn't make any sense
      */
     buildNFA(tokens: string[]): NFA {
         const fragmentStack: NFA[] = [];
