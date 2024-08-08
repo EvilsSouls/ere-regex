@@ -196,8 +196,8 @@ export default class ERERegex {
                     throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
                 }
                 case "|": {
-                    const alternativeFragment1 = fragmentStack.pop();
                     const alternativeFragment2 = fragmentStack.pop();
+                    const alternativeFragment1 = fragmentStack.pop();
 
                     if(!alternativeFragment1 || !alternativeFragment2) {throw new Error("Alternation Operator expects 2 fragments on stack, yet either one or both is undefined.");}
 
@@ -207,8 +207,8 @@ export default class ERERegex {
                     break;
                 }
                 case "°": {
-                    const nfaFragment1 = fragmentStack.pop();
                     const nfaFragment2 = fragmentStack.pop();
+                    const nfaFragment1 = fragmentStack.pop();
 
                     if(!nfaFragment1 || !nfaFragment2) {throw new Error("Concatenation Operator expects 2 fragments on stack, yet either one or both is undefined.");}
 
