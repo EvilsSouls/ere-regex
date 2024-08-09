@@ -5,11 +5,16 @@ const operators = ["|", "°", "*", "+", "?", "{"] as const;
 type Operator = (typeof operators)[number];
 type TokenType = "default" | "escape-next" | "character-set" | "interval-expression";
 
+/**
+ * @todo Add method for visualizing RegEx. This would use the NFA.visualizeNFA method probably and add some extra stuff (like the leading arrow, I'm not really sure)
+ */
 export default class ERERegex {
     readonly regex: string;
+    readonly builtRegex: NFA;
     
     constructor(regex: string) {
         this.regex = regex;
+        this.builtRegex = this.buildNFA(this.convertToPostfix(this.tokenize(this.regex)));
     }
 
     isOperator(string: any): string is Operator {
@@ -235,12 +240,14 @@ export default class ERERegex {
                 }
                 case "+": {
                     const nfaFragment = fragmentStack.pop()
-                    const lastState = nfaFragment?.at(-1);
 
-                    if(!nfaFragment || !lastState) {throw new Error("Plus Quantifier expects a fragment on stack, yet there are none.");}
+                    if(!nfaFragment) {throw new Error("Plus Quantifier expects a fragment on stack, yet there are none.");}
 
-                    lastState.addConnection(-nfaFragment.length);
-                    nfaFragment[nfaFragment.length - 1] = lastState;
+                    const newState = new State();
+                    newState.addConnection(-nfaFragment.length);
+                    newState.addConnection(undefined);
+
+                    nfaFragment.joinNFAs(new NFA(newState));
                     
                     fragmentStack.push(nfaFragment);
                     break;
