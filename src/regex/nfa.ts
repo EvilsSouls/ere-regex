@@ -18,7 +18,7 @@ export default class NFA extends Array<State> {
      * @summary Combines two or more arrays. This method modifies `this` unlike the built-in concat method.
      * @param items Additional arrays and/or items to add to the end of the array.
      */
-    concatArrays(...items: State[]): void {
+    concatArrays(...items: State[] | NFA): void {
         for(let i = 0; i < items.length; i++) {
             this.push(items[i]);
         }
@@ -42,14 +42,16 @@ export default class NFA extends Array<State> {
      */
     addBranches(...nfaBranches: NFA[]): void {
         const branchingState = new State();
+        const tempNFA = new NFA(); // Temporary NFA to add all of the states of the single NFAs (from nfaBranches) to.
         // Adds all connections to the Branching State, so that later on the branches can just be added to the fragment (with the branching state).
         for(let i = 0, relativeStartingIndex = 1; i < nfaBranches.length; i++) {
             const currentBranch = nfaBranches[i];
             branchingState.addConnection(relativeStartingIndex);
+            tempNFA.concatArrays(...currentBranch);
             relativeStartingIndex += currentBranch.length;
         }
         const newFragment = new NFA(branchingState);
-        newFragment.concat(...nfaBranches);
+        newFragment.concatArrays(...tempNFA);
         this.joinNFAs(newFragment);
     }
 
