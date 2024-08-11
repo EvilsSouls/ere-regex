@@ -267,13 +267,16 @@ export default class ERERegex {
                     fragmentStack.push(newFragment);
                     break;
                 }
-                case "{": { // Still need to fix this not working, due to being longer than 1 character. Maybe change this to the thing with identifyingCharacter??
+                case "{": {
                     break;
                 }
                 default: {
-                    // @todo Need to add escaping functionality (so to check whether current char is escaped and then remove the backslash and just use the regular character.)
+                    // Removes the backslash, if it exists.
+                    let modifiedCurrentToken = currentToken;
+                    if(currentToken.at(0) === "\\") {modifiedCurrentToken = modifiedCurrentToken.slice(1);}
+                    
                     const state = new State()
-                    state.addConnection(undefined, currentToken);
+                    state.addConnection(undefined, modifiedCurrentToken);
                     const newFragment = new NFA(state);
                     fragmentStack.push(newFragment);
                 }
@@ -289,6 +292,5 @@ export default class ERERegex {
 
     matchText(text: string): boolean {
         throw new Error("Not implemented yet!");
-        return(false);
     }
 }
