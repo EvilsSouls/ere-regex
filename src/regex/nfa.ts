@@ -27,13 +27,22 @@ export default class NFA extends Array<State> {
     /**
      * @description Concatenates two NFA State Machines and patches both together.
      * @param addend The NFA to add
-     * @todo Change it so that all connections that are currently free-floating arrows get concatenated, not just the last one (also have to change this in state.ts file)
      */
     joinNFAs(addend: NFA): void {
         for(let i = 0; i < this.length; i++) {
             this[i].patch(this.length - i);
         }
         this.concatArrays(...addend);
+    }
+
+    /**
+     * @description Patches all States' free floating arrows to point to one single State. Unlike joinNFAs this does not join two NFAs together. It only changes the existing connections. This is especially useful to form a loop, since you need all the connections at the end of the branch(es) to point to the start of the loop.
+     * @param pointer The relative pointer to which the floating connections should all point to. (Counting from the first state, so for example -1 would point to the state before the NFA)
+     */
+    patchAllStates(pointer: number): void {
+        for(let i = 0; i < this.length; i++) {
+            this[i].patch(-i + pointer);
+        }
     }
 
     /**

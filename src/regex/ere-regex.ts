@@ -119,7 +119,7 @@ export default class ERERegex {
             if(currentMode === "default") {
                 nAtom++;
 
-                // Check whether or not there's implicit concatenation and if so add it between the two tokens
+                // Checks whether or not there's implicit concatenation and if so add it between the two tokens
                 if(nAtom > 1) {
                     tokens.push("°");
                     nAtom--;
@@ -196,7 +196,9 @@ export default class ERERegex {
         const fragmentStack: NFA[] = [];
         
         for(let i = 0; i < tokens.length; i++) {
-            switch(tokens[i]) {
+            const currentToken = tokens[i];
+            const identifyingChar = currentToken[0];
+            switch(identifyingChar) {
                 case undefined: {
                     throw new Error("Current Char is undefined. There is literally no case in the world where this happens...");
                 }
@@ -223,12 +225,11 @@ export default class ERERegex {
                 }
                 case "*": {
                     const nfaFragment = fragmentStack.pop();
-                    const lastState = nfaFragment?.at(-1);
 
-                    if(!nfaFragment || !lastState) {throw new Error("Kleene Star expects a fragment on stack, yet there are none.");}
+                    if(!nfaFragment) {throw new Error("Kleene Star expects a fragment on stack, yet there are none.");}
 
-                    lastState.addConnection(-nfaFragment.length); // Need to check whether or not this is the right amount (to return back to Branching State)
-                    nfaFragment[nfaFragment.length - 1] = lastState;
+                    // Makes all Floating Arrows point to the State before this fragment (which will be the Branching State)
+                    nfaFragment.patchAllStates(-1);
 
                     const newFragment = new NFA();
                     newFragment.addBranches(nfaFragment);
@@ -269,8 +270,9 @@ export default class ERERegex {
                     break;
                 }
                 default: {
+                    // @todo Need to add escaping functionality (so to check whether current char is escaped and then remove the backslash and just use the regular character.)
                     const state = new State()
-                    state.addConnection(undefined, tokens[i]);
+                    state.addConnection(undefined, currentToken);
                     const newFragment = new NFA(state);
                     fragmentStack.push(newFragment);
                 }

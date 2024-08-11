@@ -12,7 +12,7 @@ export default class State {
     }
 
     /**
-     * @description Joins all connections of a state to one new state. WILL replace relative pointer even if it's not undefined.
+     * @description Joins all floating connections of a state to one new state.
      * @param pointer The relative pointer to which the connection(s) should point to
      */
     patch(pointer: number): void {
