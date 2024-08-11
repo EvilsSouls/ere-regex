@@ -190,9 +190,10 @@ export default class ERERegex {
 
     /**
      * @param tokens The tokens to build the NFA from. Needs to be in RPN (Reverse Polish Notation aka Postfix Notation) and tokenized.
+     * @param patchMatchingState Whether or not to patch in the Matching State in the end. (This is useful, if you still want a fragment in the end. For example if you are using this function to expand an expression which is just syntactic sugar (for example Interval Expressions))
      * @returns A fully built NFA.
      */
-    buildNFA(tokens: string[]): NFA {
+    buildNFA(tokens: string[], patchMatchingState: boolean = true): NFA {
         const fragmentStack: NFA[] = [];
         
         for(let i = 0; i < tokens.length; i++) {
@@ -282,6 +283,12 @@ export default class ERERegex {
         if(fragmentStack.length !== 1) {throw new Error("Fragment Stack has not been concatenated fully. This is usually because of a bad regex.")}
 
         const nfa = fragmentStack[0];
+        if(patchMatchingState) {nfa.patchAllStates(null);}
         return(nfa);
+    }
+
+    matchText(text: string): boolean {
+        throw new Error("Not implemented yet!");
+        return(false);
     }
 }

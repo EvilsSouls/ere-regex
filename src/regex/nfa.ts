@@ -1,4 +1,6 @@
 import State from "./state";
+import type { FinalConnectionPointer } from "./state";
+
 import Rectangle from "../svg/rectangle";
 import Arrow from "../svg/arrow";
 
@@ -39,9 +41,9 @@ export default class NFA extends Array<State> {
      * @description Patches all States' free floating arrows to point to one single State. Unlike joinNFAs this does not join two NFAs together. It only changes the existing connections. This is especially useful to form a loop, since you need all the connections at the end of the branch(es) to point to the start of the loop.
      * @param pointer The relative pointer to which the floating connections should all point to. (Counting from the first state, so for example -1 would point to the state before the NFA)
      */
-    patchAllStates(pointer: number): void {
+    patchAllStates(pointer: FinalConnectionPointer): void {
         for(let i = 0; i < this.length; i++) {
-            this[i].patch(-i + pointer);
+            this[i].patch((pointer !== null) ? -i + pointer : null);
         }
     }
 
