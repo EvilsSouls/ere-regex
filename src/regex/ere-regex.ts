@@ -189,6 +189,7 @@ export default class ERERegex {
     }
 
     /**
+     * @description Builds an NFA from a postfix & tokenized Regular Expression. To learn more about this process (and what an NFA is) read this article: https://swtch.com/~rsc/regexp/regexp1.html
      * @param tokens The tokens to build the NFA from. Needs to be in RPN (Reverse Polish Notation aka Postfix Notation) and tokenized.
      * @param patchMatchingState Whether or not to patch in the Matching State in the end. (This is useful, if you still want a fragment in the end. For example if you are using this function to expand an expression which is just syntactic sugar (for example Interval Expressions))
      * @returns A fully built NFA.
@@ -268,6 +269,74 @@ export default class ERERegex {
                     break;
                 }
                 case "{": {
+                    const nfaFragment = fragmentStack.pop();
+                    if(!nfaFragment) {throw new Error("Interval Expression expects a fragment on stack, yet there are none.");}
+
+                    let minimum: number | null = null, maximum: number | null = null;
+
+                    // Extracts the minimum and maximum values out of the Interval Expression
+                    for(let i = 1, mode: "minimum" | "maximum" | "outside" = "minimum", currentTempNum = ""; mode !== "outside"; i++) { // mode is what number the for loop is currently looking at. The lower bound is the minimum, the upper bound is the maximum, and "outside" means it's outside the curly braces
+                        if(i >= currentToken.length) {throw new Error("Interval Expression did not have closing curly bracket.");}
+                        
+                        if(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].includes(currentToken[i])) {currentTempNum += currentToken[i]; continue;}
+                        if(currentToken[i] === ",") {
+                            if(mode === "maximum") {throw new Error("Interval Expression can only have one comma.");}
+                            
+                            // Only changes the minimum if there is already a number. This is to stop parseInt() evaluating to NaN. (If the interval expression would match {,max})
+                            if(currentTempNum !== "") {
+                                minimum = parseInt(currentTempNum, 10);
+                                currentTempNum = "";
+                            }
+                            mode = "maximum";
+                            continue;
+                        }
+                        if(currentToken[i] === "}") {
+                            if(!minimum && !maximum && !currentTempNum) {throw new Error("Found Empty Interval Expression!");}
+                            
+                            // Checks whether the interval expression matches {n}. If so it sets the minimum to the same as the maximum will be to make the expression do an exact search.
+                            if(!minimum && !maximum && currentTempNum) {minimum = parseInt(currentTempNum, 10);}
+                            
+                            // Only changes the maximum if there is already a number. This is to stop parseInt() evaluating to NaN. (If the interval expression would match {min,})
+                            if(currentTempNum !== "") {maximum = parseInt(currentTempNum, 10)};
+                            
+                            mode = "outside";
+                            continue;
+                        }
+
+                        throw new Error("Unhandled Character in Interval Expression.");
+                    }
+
+                    const newFragment = new NFA();
+
+                    if(minimum) {for(let i = 0; i < minimum; i++) {
+                        newFragment.joinNFAs(nfaFragment);
+                    }}
+
+                    // Handles case {min,}
+                    if(!maximum) {
+                        const kleeneStarFragment = nfaFragment;
+                        // This is just the same code as for the Kleene Star operator.
+                        kleeneStarFragment.patchAllStates(-1);
+                        
+                        const addendFragment = new NFA()
+                        addendFragment.addBranches(kleeneStarFragment);
+                        addendFragment[0].addConnection(undefined);
+
+                        newFragment.joinNFAs(addendFragment);
+                    } else { // Handles case {,max} or {min,max}
+                        const difference = maximum - (minimum ? minimum : 0);
+                        // This is just the same code as for the question mark operator.
+                        const addendFragment = new NFA();
+                        addendFragment.addBranches(nfaFragment);
+                        addendFragment[0].addConnection(undefined);
+
+                        // Joins the optional characters to the necessary ones.
+                        for(let i = 0; i < difference; i++) {
+                            newFragment.joinNFAs(addendFragment);
+                        }
+                    }
+
+                    fragmentStack.push(newFragment);
                     break;
                 }
                 default: {
