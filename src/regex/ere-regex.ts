@@ -293,11 +293,11 @@ export default class ERERegex {
                         if(currentToken[i] === "}") {
                             if(!minimum && !maximum && !currentTempNum) {throw new Error("Found Empty Interval Expression!");}
                             
-                            // Checks whether the interval expression matches {n}. If so it sets the minimum to the same as the maximum will be to make the expression do an exact search.
-                            if(!minimum && !maximum && currentTempNum) {minimum = parseInt(currentTempNum, 10);}
-                            
                             // Only changes the maximum if there is already a number. This is to stop parseInt() evaluating to NaN. (If the interval expression would match {min,})
                             if(currentTempNum !== "") {maximum = parseInt(currentTempNum, 10)};
+
+                            // Checks whether the interval expression matches {n}. If so it sets the minimum to the same as the maximum will be to make the expression do an exact search.
+                            if(!minimum && !maximum && currentTempNum) {minimum = parseInt(currentTempNum, 10);}
                             
                             mode = "outside";
                             continue;
@@ -305,6 +305,9 @@ export default class ERERegex {
 
                         throw new Error("Unhandled Character in Interval Expression.");
                     }
+
+                    console.log("Minimum:", minimum);
+                    console.log("Maximum:", maximum);
 
                     const newFragment = new NFA();
 
