@@ -22,7 +22,7 @@ export default class NFA extends Array<State> {
      */
     concatArrays(...items: State[] | NFA): void {
         for(let i = 0; i < items.length; i++) {
-            this.push(items[i]);
+            this.push(items[i].clone());
         }
     }
 
@@ -83,9 +83,9 @@ export default class NFA extends Array<State> {
                 for(const currentConnection of currentState.connections) {
                     if(currentConnection.relativePointingIndex === 0) {throw new Error("Self-pointing States are not supported.");}
                     if(currentConnection.relativePointingIndex ? currentConnection.relativePointingIndex:1 < 0) {
-                        new Arrow(svg, currentConnection.condition.character ? currentConnection.condition.character:"", currentPointer.x + 25, currentPointer.y + 50, visitedStates.get(currentConnection.relativePointingIndex as number + currentPointer.pos)?.x as number, visitedStates.get(currentConnection.relativePointingIndex as number + currentPointer.pos)?.y as number, 100, 500, "bezier");
+                        new Arrow(svg, currentConnection.character ? currentConnection.character:"", currentPointer.x + 25, currentPointer.y + 50, visitedStates.get(currentConnection.relativePointingIndex as number + currentPointer.pos)?.x as number, visitedStates.get(currentConnection.relativePointingIndex as number + currentPointer.pos)?.y as number, 100, 500, "bezier");
                     } else {
-                        new Arrow(svg, currentConnection.condition.character ? currentConnection.condition.character:"", currentPointer.x + 50, currentPointer.y + 25, currentPointer.x + 100, currentPointer.y + 25, "straight");
+                        new Arrow(svg, currentConnection.character ? currentConnection.character:"", currentPointer.x + 50, currentPointer.y + 25, currentPointer.x + 100, currentPointer.y + 25, "straight");
                         if(currentConnection.relativePointingIndex) {
                             const newPointer: VisualPointer = {pos: currentPointer.pos + currentConnection.relativePointingIndex, x: currentPointer.x + 100, y: currentPointer.y};
                             pointers.push(newPointer);

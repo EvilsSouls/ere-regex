@@ -6,9 +6,8 @@ export type { ConnectionPointer, FinalConnectionPointer };
  * @todo Refactor Code to remove unneccessary "maximum", "minimum", and "numCrossing" values. As it's no longer planned to make Interval Expressions use these values. (Instead they should be expanded into regular State Machines using the other operators (maybe do this by making it call itself, but with a procedurally made RegEx, which is just the expanded Interval Expression)).
  */
 interface Connection {
-    numCrossing: number;
     relativePointingIndex: ConnectionPointer;
-    condition: {character?: string; maximum?: number; minimum?: number};
+    character: string | undefined;
 }
 
 export default class State {
@@ -16,6 +15,19 @@ export default class State {
 
     constructor() {
         this.connections = [];
+    }
+
+    /**
+     * @description Clones `this` to remove any possible shallow copies.
+     * @returns The exact same State, just without any pesky shallow copies
+     */
+    clone(): State {
+        const clonedState = new State();
+        for(const currentConnection of this.connections) {
+            clonedState.addConnection(currentConnection.relativePointingIndex, currentConnection.character);
+        }
+
+        return(clonedState);
     }
 
     /**
@@ -31,14 +43,11 @@ export default class State {
     /**
      * @param relativePointingIndex A relative number to where the state should point. Undefined is a floating arrow (pointing to nothing), null points to the matching state. 
      * @param character The character that needs to be fulfilled to continue to the destination of the connection.
-     * @param maximum The minimum amount of crossings that this connection needs to actually match the string.
-     * @param minimum The maximmum amount of crossings that this connection needs to actually match the string.
      */
-    addConnection(relativePointingIndex: ConnectionPointer, character?: string, maximum?: number, minimum?: number): void {
+    addConnection(relativePointingIndex: ConnectionPointer, character?: string): void {
         const connection: Connection = {
-            numCrossing: 0,
             relativePointingIndex: relativePointingIndex,
-            condition: {character: character, maximum: maximum, minimum: minimum}
+            character: character
         }
 
         this.connections.push(connection);
