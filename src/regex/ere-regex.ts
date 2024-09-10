@@ -21,6 +21,18 @@ export default class ERERegex {
         return operators.includes(string as Operator);
     }
 
+    /**
+     * @description Checks whether two characters / tokens (for example "a", or "[abc]") "match".
+     * @param character The raw character 
+     * @param token2 The regex token
+     */
+    doCharsMatch(character: string, token: string): boolean {
+        if(character === token) {return true;}
+        if(token === ".") {return true;}
+        if(character === "." && token === "\\.") {return true;}
+        return(false);
+    }
+
     tokenize(regex: string): string[] {
         const tokens: string[] = [];
         let currentTempToken = "";
@@ -359,7 +371,49 @@ export default class ERERegex {
         return(nfa);
     }
 
+    /**
+     * @description Checks whether, the text matches the regex.
+     * @param text The text to match against the RegEx.
+     */
     matchText(text: string): boolean {
-        throw new Error("Not implemented yet!");
+        const pointers: number[] = [0];
+        const hasMatched = false;
+        const hasHalted = false;
+
+        for(let i = 0; i < text.length || hasMatched || hasHalted; i++) {
+            const currentChar = text[i];
+            let onlyHasMatchingStateConnections: null | boolean = null; // If it only has matching state connections that means that it has matched and that it can end (if the final condition is true)
+
+            for(let pointersIndex = 0; pointersIndex < pointers.length; pointersIndex++) {
+                const currentPointer = pointers[pointersIndex];
+                const currentState = this.builtRegex[currentPointer];
+
+                for(let connectionIndex = 0; connectionIndex < currentState.connections.length; connectionIndex++) {
+                    const currentConnection = currentState.connections[connectionIndex];
+
+                    const newPointer = currentConnection.relativePointingIndex ? currentPointer + currentConnection.relativePointingIndex : null;
+                    
+                    if(newPointer === null) {
+                        if(onlyHasMatchingStateConnections === null) {onlyHasMatchingStateConnections = true;}
+                        continue;
+
+                    } else {onlyHasMatchingStateConnections = false;}
+                    
+                    // Handles unlabeled connections
+                    if(!currentConnection.character && newPointer) {
+                        pointers.push(newPointer);
+                        continue;
+                    }
+                    
+                    if(this.doCharsMatch(currentChar, currentConnection.character)) {
+                        pointers[pointersIndex] = newPointer;
+                    }
+                }
+            }
+
+            // Add check for if onlyHasMatchingStateConnections is true and then do the final matching check (This maybe should be done in the already existing for loop)
+        }
+
+        return(hasMatched);
     }
 }

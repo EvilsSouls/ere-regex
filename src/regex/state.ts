@@ -7,7 +7,7 @@ export type { ConnectionPointer, FinalConnectionPointer };
  */
 interface Connection {
     relativePointingIndex: ConnectionPointer;
-    character: string | undefined;
+    character: string;
 }
 
 export default class State {
@@ -44,7 +44,7 @@ export default class State {
      * @param relativePointingIndex A relative number to where the state should point. Undefined is a floating arrow (pointing to nothing), null points to the matching state. 
      * @param character The character that needs to be fulfilled to continue to the destination of the connection.
      */
-    addConnection(relativePointingIndex: ConnectionPointer, character?: string): void {
+    addConnection(relativePointingIndex: ConnectionPointer, character: string = ""): void {
         const connection: Connection = {
             relativePointingIndex: relativePointingIndex,
             character: character
