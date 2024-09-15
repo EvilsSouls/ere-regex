@@ -387,7 +387,6 @@ export default class ERERegex {
         // Also handle multiple connections since that is still only accepting one connection as the last one will just override the new pointers of the last
         for(let i = 0; i < text.length || hasMatched || hasHalted; i++) {
             const currentChar = text[i];
-            let onlyHasMatchingStateConnections: null | boolean = null; // If it only has matching state connections that means that it has matched and that it can end (if the final condition is true)
 
             for(let pointersIndex = 0; pointersIndex < pointers.length; pointersIndex++) {
                 const currentPointer = pointers[pointersIndex] as number;
@@ -400,16 +399,14 @@ export default class ERERegex {
                 for(let currentConnection of currentState.connections) {
                     const newPointer = currentConnection.relativePointingIndex ? currentPointer + currentConnection.relativePointingIndex : null;
                     
-                    if(newPointer === null) {
-                        if(onlyHasMatchingStateConnections === null) {onlyHasMatchingStateConnections = true;}
+                    // Maybe change this to one big `switch true` statement
 
+                    if(newPointer === null) {
                         if(this.doCharsMatch(currentChar, currentConnection.character)) {
                             stringMatchPoses.push(i);
-                            hasMatched = true;
                         }
                         continue;
-
-                    } else if(onlyHasMatchingStateConnections === true || onlyHasMatchingStateConnections === null) {onlyHasMatchingStateConnections = false;}
+                    }
                     
                     // Handles unlabeled connections
                     if(!currentConnection.character && newPointer) {
@@ -422,15 +419,21 @@ export default class ERERegex {
                     }
                 }
 
+                console.log(pointers);
+
                 if(newPointers.length > 0) {pointers[pointersIndex] = newPointers}
             }
 
             pointers = pointers.flat();
-            if(hasMatched === true && onlyHasMatchingStateConnections === false) {hasMatched = false;} // Makes the algorithm greedy (tries to find the longest possible match)
-            if(onlyHasMatchingStateConnections === null) {hasHalted = true;}
-        }
-        console.log(hasHalted);
 
+            console.log(pointers, pointers.length);
+
+            if(pointers.length === 0) {hasHalted = true;}
+
+            debugger;
+        }
+
+        if(stringMatchPoses.length > 0) {hasMatched = true;}
 
         return({hasMatched: hasMatched, end: stringMatchPoses.pop()});
     }
