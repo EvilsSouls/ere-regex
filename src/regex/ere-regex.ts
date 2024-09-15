@@ -378,14 +378,13 @@ export default class ERERegex {
      */
     matchText(text: string): {hasMatched: boolean, end?: number} {
         let pointers: PointerArray = [0]; // A list of all the current Pointers pointing to the different states that the machien is currently at.
-        let hasMatched = false;
         let hasHalted = false;
         const stringMatchPoses: number[] = []
 
         // Still need to think about matching states and how to represent them. Also the general workflow of the for loops. Like should it just be numbers nulls and empty slots.
         // And also actually add the functionality that null pointers get added to the array (since that isn't happening).
         // Also handle multiple connections since that is still only accepting one connection as the last one will just override the new pointers of the last
-        for(let i = 0; i < text.length || hasMatched || hasHalted; i++) {
+        for(let i = 0; i < text.length && !hasHalted; i++) {
             const currentChar = text[i];
 
             for(let pointersIndex = 0; pointersIndex < pointers.length; pointersIndex++) {
@@ -425,16 +424,10 @@ export default class ERERegex {
             }
 
             pointers = pointers.flat();
-
-            console.log(pointers, pointers.length);
-
             if(pointers.length === 0) {hasHalted = true;}
-
-            debugger;
         }
 
-        if(stringMatchPoses.length > 0) {hasMatched = true;}
-
+        const hasMatched = stringMatchPoses.length > 0;
         return({hasMatched: hasMatched, end: stringMatchPoses.pop()});
     }
 }
