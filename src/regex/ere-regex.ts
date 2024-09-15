@@ -4,6 +4,7 @@ import NFA from "./nfa";
 const operators = ["|", "°", "*", "+", "?", "{"] as const;
 type Operator = (typeof operators)[number];
 type TokenType = "default" | "escape-next" | "character-set" | "interval-expression";
+type PointerArray = (number | PointerArray)[];
 
 /**
  * @todo Add method for visualizing RegEx. This would use the NFA.visualizeNFA method probably and add some extra stuff (like the leading arrow, I'm not really sure)
@@ -375,29 +376,40 @@ export default class ERERegex {
      * @description Checks whether, the text matches the regex.
      * @param text The text to match against the RegEx.
      */
-    matchText(text: string): boolean {
-        const pointers: number[] = [0];
-        const hasMatched = false;
-        const hasHalted = false;
+    matchText(text: string): {hasMatched: boolean, end?: number} {
+        let pointers: PointerArray = [0]; // A list of all the current Pointers pointing to the different states that the machien is currently at.
+        let hasMatched = false;
+        let hasHalted = false;
+        const stringMatchPoses: number[] = []
 
+        // Still need to think about matching states and how to represent them. Also the general workflow of the for loops. Like should it just be numbers nulls and empty slots.
+        // And also actually add the functionality that null pointers get added to the array (since that isn't happening).
+        // Also handle multiple connections since that is still only accepting one connection as the last one will just override the new pointers of the last
         for(let i = 0; i < text.length || hasMatched || hasHalted; i++) {
             const currentChar = text[i];
             let onlyHasMatchingStateConnections: null | boolean = null; // If it only has matching state connections that means that it has matched and that it can end (if the final condition is true)
 
             for(let pointersIndex = 0; pointersIndex < pointers.length; pointersIndex++) {
-                const currentPointer = pointers[pointersIndex];
+                const currentPointer = pointers[pointersIndex] as number;
+                if(currentPointer === undefined) {continue;}
                 const currentState = this.builtRegex[currentPointer];
+                delete pointers[pointersIndex];
 
-                for(let connectionIndex = 0; connectionIndex < currentState.connections.length; connectionIndex++) {
-                    const currentConnection = currentState.connections[connectionIndex];
+                const newPointers: PointerArray = [];
 
+                for(let currentConnection of currentState.connections) {
                     const newPointer = currentConnection.relativePointingIndex ? currentPointer + currentConnection.relativePointingIndex : null;
                     
                     if(newPointer === null) {
                         if(onlyHasMatchingStateConnections === null) {onlyHasMatchingStateConnections = true;}
+
+                        if(this.doCharsMatch(currentChar, currentConnection.character)) {
+                            stringMatchPoses.push(i);
+                            hasMatched = true;
+                        }
                         continue;
 
-                    } else {onlyHasMatchingStateConnections = false;}
+                    } else if(onlyHasMatchingStateConnections === true || onlyHasMatchingStateConnections === null) {onlyHasMatchingStateConnections = false;}
                     
                     // Handles unlabeled connections
                     if(!currentConnection.character && newPointer) {
@@ -406,14 +418,20 @@ export default class ERERegex {
                     }
                     
                     if(this.doCharsMatch(currentChar, currentConnection.character)) {
-                        pointers[pointersIndex] = newPointer;
+                        newPointers.push(newPointer);
                     }
                 }
+
+                if(newPointers.length > 0) {pointers[pointersIndex] = newPointers}
             }
 
-            // Add check for if onlyHasMatchingStateConnections is true and then do the final matching check (This maybe should be done in the already existing for loop)
+            pointers = pointers.flat();
+            if(hasMatched === true && onlyHasMatchingStateConnections === false) {hasMatched = false;} // Makes the algorithm greedy (tries to find the longest possible match)
+            if(onlyHasMatchingStateConnections === null) {hasHalted = true;}
         }
+        console.log(hasHalted);
 
-        return(hasMatched);
+
+        return({hasMatched: hasMatched, end: stringMatchPoses.pop()});
     }
 }
