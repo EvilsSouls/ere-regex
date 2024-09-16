@@ -401,7 +401,7 @@ export default class ERERegex {
                     // Maybe change this to one big `switch true` statement
 
                     if(newPointer === null) {
-                        if(this.doCharsMatch(currentChar, currentConnection.character)) {
+                        if(!currentConnection.character || this.doCharsMatch(currentChar, currentConnection.character)) {
                             stringMatchPoses.push(i);
                         }
                         continue;
@@ -417,8 +417,6 @@ export default class ERERegex {
                         newPointers.push(newPointer);
                     }
                 }
-
-                console.log(pointers);
 
                 if(newPointers.length > 0) {pointers[pointersIndex] = newPointers}
             }
